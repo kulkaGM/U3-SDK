@@ -1,20 +1,11 @@
 # U3 SDK
 
-Source code for [Unturned](https://smartlydressedgames.com/unturned/), a free open-world zombie survival sandbox game.
+This branch introduces a way for `Localization` mods to translate Unturned or Workshop assets without the need of any other consumer input like manually copying files over.
 
-## Getting Started
+There are 4 supported formats\
+`Path/To/Asset/{Language}.dat` (Unturned's default near `Asset.dat`)\
+`LocalizationRoot/Assets/{AssetGUID}.dat`\
+`LocalizationRoot/Assets/Unturned/Path/To/Asset/{Language}.dat`\
+`LocalizationRoot/Assets/Workshop/WorkshopId/Path/To/Asset/{Language}.dat`
 
-1. Download/clone this repository
-2. Install [Unity Hub](https://unity.com/download) (required to install engine)
-3. Install the [Unity 2022.3.62f3](https://unity.com/releases/editor/whats-new/2022.3.62f3) editor
-4. *Optional*: if making code changes, select **Game development with Unity** + **.NET desktop development** in the Visual Studio installer
-5. Ensure Steam is running and you have [Unturned](https://store.steampowered.com/app/304930/Unturned/) installed (large binary files and mods are loaded from here)
-6. Open the project with the Unity editor
-7. Open the `Assets/GameStartup.unity` scene
-8. Click play!
-
-## Resources
-
-- [Frequently Asked Questions](https://docs.smartlydressedgames.com/en/stable/u3-sdk/faq.html)
-- [Source Code Demo: Adding a Heat-Seeking Missile on YouTube](https://youtu.be/CqJnkcWfmEY)
-- [Unturned's Modding Documentation](https://docs.smartlydressedgames.com/en/stable/)
+Note: Yes I know there is no reason to name translation file `{Language}.dat` if its already in the corresponding LocalizationRoot, to anyone complaining there is in fact no reason to change it and require more work from translators (unless they can automate their stuff) except simply moving it to new folders like `Assets/Unturned`.

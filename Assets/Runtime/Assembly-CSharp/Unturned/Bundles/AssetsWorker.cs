@@ -83,6 +83,7 @@ namespace SDG.Unturned
 			// Make a copy of language information so worker knows what translation files to look for.
 			language = Provider.language;
 			languageIsEnglish = Provider.languageIsEnglish;
+			localizationRoot = Provider.localizationRoot;
 			UnityEngine.Debug.Assert(!string.IsNullOrEmpty(language));
 
 			shouldWorkerThreadsContinue = 1;
@@ -385,6 +386,50 @@ namespace SDG.Unturned
 				}
 			}
 
+			/// <summary>
+			/// Tries to find one of three possible locations for {language}.dat file
+			/// </summary>
+			private bool TryGetAssetLanguagePath(string assetDirectory, IDatDictionary rootData, string language, out string languageFilePath)
+			{
+				languageFilePath = Path.Combine(assetDirectory, language + ".dat");
+				if (File.Exists(languageFilePath)) return true;
+
+				if (rootData.TryParseGuid("GUID", out System.Guid guid))
+				{
+					languageFilePath = Path.Combine(owner.localizationRoot, "Assets", guid.ToString("N") + ".dat");
+					if (File.Exists(languageFilePath)) return true;
+				}
+
+				string expectedThirdPartyPath;
+				if (origin.workshopFileId == 0)
+				{
+#if UNITY_EDITOR || DEVELOPMENT_BUILD || !WITH_NOREDIST
+					string assetRelativePath = Path.GetRelativePath(Provider.steamAppInstallDirectory.FullName, assetDirectory);
+#else
+					string assetRelativePath = Path.GetRelativePath(ReadWrite.PATH, assetDirectory);
+#endif
+
+					expectedThirdPartyPath = Path.Combine(owner.localizationRoot, "Assets", "Unturned", assetRelativePath);
+				}
+				else
+				{
+					string fileId = origin.workshopFileId.ToString();
+					// I don't like relying on string manipulation,
+					// not even sure if there is path to the steam workshop somewhere
+					// and if so it will likely be with some SteamUGC context
+					// which I don't see reason to use and pass thru multiple methods
+					string assetRelativePath = assetDirectory.Substring(assetDirectory.IndexOf(fileId) + fileId.Length + 1);
+
+					expectedThirdPartyPath = Path.Combine(owner.localizationRoot, "Assets", "Workshop", fileId, assetRelativePath);
+				}
+
+				languageFilePath = Path.Combine(expectedThirdPartyPath, language + ".dat");
+				if (File.Exists(languageFilePath)) return true;
+
+				languageFilePath = null;
+				return false;
+			}
+
 			public void AddFoundAsset(string filePath, bool checkForTranslations)
 			{
 				string dirPath = Path.GetDirectoryName(filePath);
@@ -405,20 +450,14 @@ namespace SDG.Unturned
 
 					if (checkForTranslations)
 					{
-						string languageFilePath = Path.Combine(dirPath, owner.language + ".dat");
-						string englishFilePath = Path.Combine(dirPath, "English.dat");
-
-						if (File.Exists(languageFilePath))
+						if (TryGetAssetLanguagePath(dirPath, rootData, owner.language, out string languageFilePath))
 						{
 							translationData = ReadFileWithoutHash(languageFilePath);
-							if (!owner.languageIsEnglish && File.Exists(englishFilePath))
-							{
-								fallbackTranslationData = ReadFileWithoutHash(englishFilePath);
-							}
 						}
-						else if (File.Exists(englishFilePath))
+
+						if (!owner.languageIsEnglish && TryGetAssetLanguagePath(dirPath, rootData, "English", out string englishFilePath))
 						{
-							translationData = ReadFileWithoutHash(englishFilePath);
+							fallbackTranslationData = ReadFileWithoutHash(englishFilePath);
 						}
 					}
 
@@ -460,6 +499,7 @@ namespace SDG.Unturned
 
 		private string language;
 		private bool languageIsEnglish;
+		private string localizationRoot;
 
 #if WITH_ASSETS_PROFILING
 		private CustomSampler workSampler = CustomSampler.Create("AssetsWorker.Work");
